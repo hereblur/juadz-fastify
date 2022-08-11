@@ -1,0 +1,52 @@
+{
+  "name": "@juadz/juadz-fastify",
+  "version": "0.0.1",
+  "description": "Fastify plugins for Juadz",
+  "main": "build/src/index.js",
+  "scripts": {
+    "test": "jest .",
+    "lint": "gts lint",
+    "clean": "gts clean",
+    "compile": "tsc",
+    "fix": "gts fix",
+    "prepare": "yarn run compile",
+    "pretest": "yarn run compile",
+    "posttest": "yarn run lint"
+  },
+  "keywords": [],
+  "author": "Supasak Sutha",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/hereblur/juadz-fastify"
+  },
+  "files": [
+    "build/**/*"
+  ],
+  "devDependencies": {
+    "@babel/core": "^7.18.10",
+    "@babel/preset-env": "^7.18.10",
+    "@babel/preset-typescript": "^7.18.6",
+    "@types/jest": "^28.1.6",
+    "@types/node": "^14.11.2",
+    "@types/rimraf": "^3.0.2",
+    "babel-jest": "^28.1.3",
+    "gts": "^3.1.0",
+    "jest": "^28.1.3",
+    "typescript": "^4.0.3",
+    "@fastify/auth": "^3.0.2",
+    "@fastify/cors": "^8.1.0",
+    "@fastify/swagger": "^7.4.1",
+    "@juadz/core": "^0.0.1",
+    "fastify": "^4.3.0",
+    "openapi-types": "^12.0.0"
+  },
+  "peerDependencies": {
+    "@fastify/auth": "^3.0.2",
+    "@fastify/cors": "^8.1.0",
+    "@fastify/swagger": "^7.4.1",
+    "@juadz/core": "^0.0.1",
+    "fastify": "^4.3.0",
+    "openapi-types": "^12.0.0"
+  }
+}
