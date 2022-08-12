@@ -1,6 +1,6 @@
 {
-  "name": "@juadz/juadz-fastify",
-  "version": "0.0.1",
+  "name": "@juadz/fastify",
+  "version": "0.0.2",
   "description": "Fastify plugins for Juadz",
   "main": "build/src/index.js",
   "scripts": {
@@ -14,7 +14,7 @@
     "posttest": "yarn run lint"
   },
   "keywords": [],
-  "author": "Supasak Sutha",
+  "author": "Hereblur",
   "license": "MIT",
   "repository": {
     "type": "git",
@@ -27,25 +27,28 @@
     "@babel/core": "^7.18.10",
     "@babel/preset-env": "^7.18.10",
     "@babel/preset-typescript": "^7.18.6",
-    "@types/jest": "^28.1.6",
-    "@types/node": "^14.11.2",
-    "@types/rimraf": "^3.0.2",
-    "babel-jest": "^28.1.3",
-    "gts": "^3.1.0",
-    "jest": "^28.1.3",
-    "typescript": "^4.0.3",
     "@fastify/auth": "^3.0.2",
     "@fastify/cors": "^8.1.0",
     "@fastify/swagger": "^7.4.1",
-    "@juadz/core": "^0.0.1",
+    "@juadz/core": "^0.0.3",
+    "@types/jest": "^28.1.6",
+    "@types/jsonwebtoken": "^8.5.8",
+    "@types/memory-cache": "^0.2.2",
+    "@types/node": "^14.11.2",
+    "@types/rimraf": "^3.0.2",
+    "babel-jest": "^28.1.3",
     "fastify": "^4.3.0",
-    "openapi-types": "^12.0.0"
+    "gts": "^3.1.0",
+    "jest": "^28.1.3",
+    "openapi-types": "^12.0.0",
+    "redis": "^4.2.0",
+    "typescript": "^4.0.3"
   },
   "peerDependencies": {
     "@fastify/auth": "^3.0.2",
     "@fastify/cors": "^8.1.0",
     "@fastify/swagger": "^7.4.1",
-    "@juadz/core": "^0.0.1",
+    "@juadz/core": "^0.0.3",
     "fastify": "^4.3.0",
     "openapi-types": "^12.0.0"
   }
