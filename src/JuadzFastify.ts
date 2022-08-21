@@ -1,4 +1,3 @@
-import {ErrorToHttp, IHttpJsonResponse} from '@juadz/core';
 import Fastify, {FastifyServerOptions, FastifyInstance} from 'fastify';
 
 interface PluginsInitFunction {

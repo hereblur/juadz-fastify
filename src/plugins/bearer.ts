@@ -1,17 +1,21 @@
 import {FastifyInstance, FastifyRequest, FastifyReply} from 'fastify';
 import FastifyAuth from '@fastify/auth';
-import {IACLActor, Authentication} from '@juadz/core';
+import {IACLActor, IAuthentication} from '@juadz/core';
 import {FastifyRequestWithAuth} from '../types';
+import Debug from 'debug';
+
+const debug = Debug('juadz/fastify');
 
 export default function useBearer(
   authenticationName: string,
-  authen: Authentication
+  authen: IAuthentication
 ) {
   return async (fastify: FastifyInstance) => {
     await fastify
       .decorate(
         authenticationName,
         async (request: FastifyRequest, reply: FastifyReply) => {
+          debug(`${authenticationName}: ${request.headers['authorization'] || 'empty'}`)
           try {
             const payload: IACLActor = await authen.verify(
               `${request.headers['authorization']}`
@@ -20,6 +24,7 @@ export default function useBearer(
             );
 
             if (payload) {
+              debug(`${authenticationName}: pass`, JSON.stringify(payload));
               (request as FastifyRequestWithAuth).user = payload;
               return;
             }

@@ -12,3 +12,5 @@ export {useCors};
 export {useLogin};
 export {useSwagger};
 export {useRestResource};
+
+export * from './types';

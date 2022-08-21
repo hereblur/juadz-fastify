@@ -1,8 +1,8 @@
 import {FastifyInstance, RouteOptions} from 'fastify';
-import {Authentication, ErrorToHttp, IHttpJsonResponse} from '@juadz/core';
+import {IAuthentication, ErrorToHttp, IHttpJsonResponse} from '@juadz/core';
 
 interface LoginHandler {
-  (reqBody: unknown, auth: Authentication): Promise<IHttpJsonResponse>;
+  (reqBody: unknown, auth: IAuthentication): Promise<IHttpJsonResponse>;
 }
 
 interface LoginOptions {
@@ -13,7 +13,7 @@ interface LoginOptions {
 
 export default function useLogin(
   loginFunc: LoginHandler,
-  auth: Authentication,
+  auth: IAuthentication,
   options: LoginOptions = {}
 ) {
   return async (fastify: FastifyInstance) => {
