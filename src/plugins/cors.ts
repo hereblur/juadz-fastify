@@ -2,14 +2,17 @@ import {FastifyInstance} from 'fastify';
 import FastifyCors from '@fastify/cors';
 
 export default function useCors(
-  domains: Array<string | RegExp>,
-  headers: Array<string>
+  domains?: Array<string | RegExp>,
+  allowedHeaders?: Array<string>,
+  exposedHeaders?: Array<string>,
+  methods?: Array<string>,
 ) {
   return async (fastify: FastifyInstance) => {
     fastify.register(FastifyCors, {
-      origin: domains,
-      methods: ['GET', 'PUT', 'POST', 'DELETE'],
-      allowedHeaders: headers || [],
+      origin: domains || ['localhost'],
+      methods: methods || ['GET', 'PUT', 'POST', 'DELETE', 'HEAD', 'PATCH'],
+      allowedHeaders: allowedHeaders || [],
+      exposedHeaders: exposedHeaders || allowedHeaders|| [],
     });
   };
 }

@@ -1303,12 +1303,12 @@
     "@jridgewell/resolve-uri" "^3.0.3"
     "@jridgewell/sourcemap-codec" "^1.4.10"
 
-"@juadz/core@^0.0.4":
-  version "0.0.4"
-  resolved "https://registry.yarnpkg.com/@juadz/core/-/core-0.0.4.tgz#ac820bd0f2ab68be71168afbb7b5daf6d7523547"
-  integrity sha512-0Sq79Bg7zCDDw2SG10qRubhD+cqx1IBbMpV/OEQC+JF+iN5Ic0f5qbHFV4Vd6qh5KHo/die/y/EsG3DU4lmwzA==
+"@juadz/core@^0.0.12":
+  version "0.0.12"
+  resolved "https://registry.yarnpkg.com/@juadz/core/-/core-0.0.12.tgz#a4052f805383d97b1e6559b01d6eb0fb582ceabc"
+  integrity sha512-j9szD5VTbsNk2SvBcFJKOiDl+5vvD5ZcSL5NVsJwtWnEMHekR4kybM8anTY8p4tlD4NdGe8xbGkijvaXKWwhgg==
   dependencies:
-    ajv "^8.11.0"
+    debug "^4.3.4"
 
 "@nodelib/fs.scandir@2.1.5":
   version "2.1.5"
@@ -1664,7 +1664,7 @@ ajv@^6.10.0, ajv@^6.12.4:
     json-schema-traverse "^0.4.1"
     uri-js "^4.2.2"
 
-ajv@^8.0.0, ajv@^8.0.1, ajv@^8.10.0, ajv@^8.11.0:
+ajv@^8.0.0, ajv@^8.0.1, ajv@^8.10.0:
   version "8.11.0"
   resolved "https://registry.yarnpkg.com/ajv/-/ajv-8.11.0.tgz#977e91dd96ca669f54a11e23e378e33b884a565f"
   integrity sha512-wGgprdCvMalC0BztXvitD2hC04YffAvtsUn93JbGXYLAtCUO4xd17mCCZQxUOItiBwZvJScWo8NIvQMQ71rdpg==
