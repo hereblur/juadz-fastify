@@ -1,6 +1,6 @@
 {
   "name": "@juadz/fastify",
-  "version": "0.0.3",
+  "version": "0.0.4",
   "description": "Fastify plugins for Juadz",
   "main": "build/src/index.js",
   "scripts": {
@@ -31,6 +31,7 @@
     "@fastify/cors": "^8.1.0",
     "@fastify/swagger": "^7.4.1",
     "@juadz/core": "^0.0.4",
+    "@types/debug": "^4.1.7",
     "@types/jest": "^28.1.6",
     "@types/jsonwebtoken": "^8.5.8",
     "@types/memory-cache": "^0.2.2",
@@ -51,5 +52,8 @@
     "@juadz/core": "^0.0.4",
     "fastify": "^4.3.0",
     "openapi-types": "^12.0.0"
+  },
+  "dependencies": {
+    "debug": "^4.3.4"
   }
 }
