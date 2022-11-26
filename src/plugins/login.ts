@@ -52,13 +52,12 @@ const loginSchema = (fields: Array<string>) => {
         (o, f) => ({
           ...o,
           [f]: {
-            type: 'string',
-            required: false,
+            type: ['string'],
           },
         }),
         {}
       ),
-      required: fields,
+      required: [],
     },
     response: {
       200: {
