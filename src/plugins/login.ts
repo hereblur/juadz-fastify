@@ -1,8 +1,8 @@
-import {FastifyInstance, RouteOptions} from 'fastify';
+import {FastifyInstance, FastifyRequest, RouteOptions} from 'fastify';
 import {IAuthentication, ErrorToHttp, IHttpJsonResponse} from '@juadz/core';
 
 interface LoginHandler {
-  (reqBody: unknown, auth: IAuthentication): Promise<IHttpJsonResponse>;
+  (reqBody: unknown, auth: IAuthentication, request: FastifyRequest): Promise<IHttpJsonResponse>;
 }
 
 interface LoginOptions {
@@ -23,7 +23,7 @@ export default function useLogin(
       schema: loginSchema(options.fields || ['username', 'password']),
       handler: async function (request, reply) {
         try {
-          const result = await loginFunc(request.body, auth);
+          const result = await loginFunc(request.body, auth, request);
           if (result && result.body) {
             reply
               .status(200)
@@ -52,7 +52,8 @@ const loginSchema = (fields: Array<string>) => {
         (o, f) => ({
           ...o,
           [f]: {
-            type: ['string'],
+            type: 'string',
+            required: false,
           },
         }),
         {}

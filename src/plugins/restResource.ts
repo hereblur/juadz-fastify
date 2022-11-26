@@ -3,7 +3,9 @@ import {
   FastifyReply,
   FastifyRequest,
   preValidationAsyncHookHandler,
+  RouteHandler,
   RouteShorthandMethod,
+  RouteShorthandOptions,
 } from 'fastify';
 import {ErrorToHttp, JuadzResource} from '@juadz/core';
 import {IACLActor, IDataRecord, IQueryAdaptor} from '@juadz/core';
@@ -106,17 +108,29 @@ export default function useRestResource(
       }`;
     };
 
-    const httpMethod = (method: string): RouteShorthandMethod => {
+    const makeRoute = (method: string, path: string, schema: RouteShorthandOptions, handler: RouteHandler): void => {
       switch (method.toLowerCase()) {
-        case 'get': return fastify.get;
-        case 'post': return fastify.post;
-        case 'put': return fastify.put;
-        case 'patch': return fastify.patch;
-        case 'delete': return fastify.delete;
-        case 'head': return fastify.head;
+        case 'get': 
+          fastify.get(path, schema, handler);
+          break;
+        case 'post': 
+          fastify.post(path, schema, handler);
+          break;
+        case 'put': 
+          fastify.put(path, schema, handler);
+          break;
+        case 'patch': 
+          fastify.patch(path, schema, handler);
+          break;
+        case 'delete': 
+          fastify.delete(path, schema, handler);
+          break;
+        case 'head': 
+          fastify.head(path, schema, handler);
+          break;
       }
 
-      throw new Error(`HTTP method ${method} is not supported.`)
+      // throw new Error(`HTTP method ${method} is not supported.`)
     }
 
     resources.forEach(resourceDef => {
@@ -124,7 +138,7 @@ export default function useRestResource(
       const {resource, routes = [], authentication} = definitions;
 
       if (routes.includes('get')) {
-        httpMethod(definitions.httpMethods?.get || 'GET')(
+        makeRoute(definitions.httpMethods?.get || 'GET',
           makePath(resource.resourceName, true, definitions),
           {
             preValidation: getPreValidate(fastify, authentication),
@@ -146,7 +160,7 @@ export default function useRestResource(
       }
 
       if (routes.includes('update')) {
-        httpMethod(definitions.httpMethods?.update || 'PATCH')(
+        makeRoute(definitions.httpMethods?.update || 'PATCH',
           makePath(resource.resourceName, true, resourceDef),
           {
             preValidation: getPreValidate(fastify, authentication),
@@ -169,7 +183,7 @@ export default function useRestResource(
       }
 
       if (routes.includes('create')) {
-        httpMethod(definitions.httpMethods?.create || 'POST')(
+        makeRoute(definitions.httpMethods?.create || 'POST',
           makePath(resource.resourceName, false, resourceDef),
           {
             preValidation: getPreValidate(fastify, authentication),
@@ -191,7 +205,7 @@ export default function useRestResource(
       }
 
       if (routes.includes('delete')) {
-        httpMethod(definitions.httpMethods?.delete || 'DELETE')(
+        makeRoute(definitions.httpMethods?.delete || 'DELETE',
           makePath(resource.resourceName, true, resourceDef),
           {
             preValidation: getPreValidate(fastify, authentication),
@@ -213,7 +227,7 @@ export default function useRestResource(
       }
 
       if (routes.includes('list') && definitions.listAdaptor) {
-        httpMethod(definitions.httpMethods?.list || 'GET')(
+        makeRoute(definitions.httpMethods?.list || 'GET',
           makePath(resource.resourceName, false, resourceDef),
           {
             preValidation: getPreValidate(fastify, authentication),
