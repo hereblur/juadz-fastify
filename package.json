@@ -1,6 +1,6 @@
 {
   "name": "@juadz/fastify",
-  "version": "0.0.11-beta",
+  "version": "0.1.0-beta",
   "description": "Fastify plugins for Juadz",
   "main": "build/src/index.js",
   "scripts": {
@@ -30,13 +30,12 @@
     "@fastify/auth": "^3.0.2",
     "@fastify/cors": "^8.1.0",
     "@fastify/swagger": "^7.4.1",
-    "@juadz/core": "^0.0.15",
+    "@juadz/core": "^0.1.2",
     "@types/debug": "^4.1.7",
     "@types/jest": "^28.1.6",
     "@types/jsonwebtoken": "^8.5.8",
     "@types/memory-cache": "^0.2.2",
     "@types/node": "^14.11.2",
-    "@types/rimraf": "^3.0.2",
     "babel-jest": "^28.1.3",
     "fastify": "^4.3.0",
     "gts": "^3.1.0",
@@ -49,7 +48,7 @@
     "@fastify/auth": "^3.0.2",
     "@fastify/cors": "^8.1.0",
     "@fastify/swagger": "^7.4.1",
-    "@juadz/core": "^0.0.4",
+    "@juadz/core": "^0.1.2",
     "fastify": "^4.3.0",
     "openapi-types": "^12.0.0"
   },
