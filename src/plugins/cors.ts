@@ -5,14 +5,14 @@ export default function useCors(
   domains?: Array<string | RegExp>,
   allowedHeaders?: Array<string>,
   exposedHeaders?: Array<string>,
-  methods?: Array<string>,
+  methods?: Array<string>
 ) {
   return async (fastify: FastifyInstance) => {
     fastify.register(FastifyCors, {
       origin: domains || ['localhost'],
       methods: methods || ['GET', 'PUT', 'POST', 'DELETE', 'HEAD', 'PATCH'],
       allowedHeaders: allowedHeaders || [],
-      exposedHeaders: exposedHeaders || allowedHeaders|| [],
+      exposedHeaders: exposedHeaders || allowedHeaders || [],
     });
   };
 }

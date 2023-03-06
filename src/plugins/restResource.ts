@@ -4,28 +4,16 @@ import {
   FastifyRequest,
   preValidationAsyncHookHandler,
   RouteHandler,
-  RouteShorthandMethod,
+  // RouteShorthandMethod,
   RouteShorthandOptions,
 } from 'fastify';
 import {ErrorToHttp, JuadzResource} from '@juadz/core';
 import {IACLActor, IDataRecord, IQueryAdaptor} from '@juadz/core';
 import {FastifyRequestWithAuth} from '../types';
 
-type DefinitionRoutes = 'create' | 'get' | 'update' | 'delete' | 'list';
-
-export interface RestResourceHttpMethods {
-  get?: string,
-  list?: string,
-  update?: string,
-  create?: string,
-  delete?: string,
-}
-
 export interface RestResourceDefinitionsOptions {
   prefix?: string;
-  routes?: Array<DefinitionRoutes>;
   listAdaptor?: IQueryAdaptor;
-  httpMethods?: RestResourceHttpMethods;
   authentication?: preValidationAsyncHookHandler | string | undefined;
 }
 
@@ -34,11 +22,6 @@ export interface RestResourceDefinitions
   resource: JuadzResource;
   path?: string;
 }
-
-const defaultRestResourceDefinitionsOptions = {
-  prefix: '',
-  routes: ['create', 'get', 'update', 'list'] as Array<DefinitionRoutes>,
-};
 
 interface SimpleObject extends Object {
   [key: string]: unknown;
@@ -77,7 +60,6 @@ function getPreValidate(
   return authentication;
 }
 
-
 export default function useRestResource(
   defaultDefinitions: RestResourceDefinitionsOptions,
   resources: Array<RestResourceDefinitions>
@@ -87,7 +69,7 @@ export default function useRestResource(
       resourceDef: RestResourceDefinitions
     ): RestResourceDefinitions => {
       return {
-        ...defaultRestResourceDefinitionsOptions,
+        prefix: '',
         ...defaultDefinitions,
         ...resourceDef,
       };
@@ -108,37 +90,44 @@ export default function useRestResource(
       }`;
     };
 
-    const makeRoute = (method: string, path: string, schema: RouteShorthandOptions, handler: RouteHandler): void => {
+    const makeRoute = (
+      method: string,
+      path: string,
+      schema: RouteShorthandOptions,
+      handler: RouteHandler
+    ): void => {
       switch (method.toLowerCase()) {
-        case 'get': 
+        case 'get':
           fastify.get(path, schema, handler);
           break;
-        case 'post': 
+        case 'post':
           fastify.post(path, schema, handler);
           break;
-        case 'put': 
+        case 'put':
           fastify.put(path, schema, handler);
           break;
-        case 'patch': 
+        case 'patch':
           fastify.patch(path, schema, handler);
           break;
-        case 'delete': 
+        case 'delete':
           fastify.delete(path, schema, handler);
           break;
-        case 'head': 
+        case 'head':
           fastify.head(path, schema, handler);
           break;
       }
 
       // throw new Error(`HTTP method ${method} is not supported.`)
-    }
+    };
 
     resources.forEach(resourceDef => {
       const definitions = getDefinitions(resourceDef);
-      const {resource, routes = [], authentication} = definitions;
+      const {resource, authentication} = definitions;
+      const methodsMapping = resource.methodsMapping;
 
-      if (routes.includes('get')) {
-        makeRoute(definitions.httpMethods?.get || 'GET',
+      if (methodsMapping.view) {
+        makeRoute(
+          methodsMapping.view,
           makePath(resource.resourceName, true, definitions),
           {
             preValidation: getPreValidate(fastify, authentication),
@@ -159,8 +148,9 @@ export default function useRestResource(
         );
       }
 
-      if (routes.includes('update')) {
-        makeRoute(definitions.httpMethods?.update || 'PATCH',
+      if (methodsMapping.update) {
+        makeRoute(
+          methodsMapping.update,
           makePath(resource.resourceName, true, resourceDef),
           {
             preValidation: getPreValidate(fastify, authentication),
@@ -182,8 +172,9 @@ export default function useRestResource(
         );
       }
 
-      if (routes.includes('create')) {
-        makeRoute(definitions.httpMethods?.create || 'POST',
+      if (methodsMapping.create) {
+        makeRoute(
+          methodsMapping.create,
           makePath(resource.resourceName, false, resourceDef),
           {
             preValidation: getPreValidate(fastify, authentication),
@@ -204,8 +195,33 @@ export default function useRestResource(
         );
       }
 
-      if (routes.includes('delete')) {
-        makeRoute(definitions.httpMethods?.delete || 'DELETE',
+      if (methodsMapping.replace) {
+        makeRoute(
+          methodsMapping.replace,
+          makePath(resource.resourceName, false, resourceDef),
+          {
+            preValidation: getPreValidate(fastify, authentication),
+            schema: replaceSchema(resource),
+          },
+          async (request, reply) => {
+            try {
+              const result = await resource.replace(
+                getActor(request),
+                getId(request),
+                request.body as IDataRecord
+              );
+              reply.send(result);
+            } catch (error) {
+              fastify.log.error(error);
+              handleError(error, reply);
+            }
+          }
+        );
+      }
+
+      if (methodsMapping.delete) {
+        makeRoute(
+          methodsMapping.delete,
           makePath(resource.resourceName, true, resourceDef),
           {
             preValidation: getPreValidate(fastify, authentication),
@@ -226,8 +242,9 @@ export default function useRestResource(
         );
       }
 
-      if (routes.includes('list') && definitions.listAdaptor) {
-        makeRoute(definitions.httpMethods?.list || 'GET',
+      if (methodsMapping.list && definitions.listAdaptor) {
+        makeRoute(
+          methodsMapping.list,
           makePath(resource.resourceName, false, resourceDef),
           {
             preValidation: getPreValidate(fastify, authentication),
@@ -330,9 +347,29 @@ const createSchema = (resource: JuadzResource) => {
   };
 };
 
+const replaceSchema = (resource: JuadzResource) => {
+  return {
+    description: `Replace ${resource.resourceName}`,
+    tags: [resource.resourceName],
+    body: {
+      type: 'object',
+      additionalProperties: false,
+      properties: resource.schema.replaceSchema,
+      required: resource.schema.requiredFields,
+    },
+    response: {
+      200: {
+        type: 'object',
+        additionalProperties: false,
+        properties: resource.schema.viewSchema,
+      },
+    },
+  };
+};
+
 const updateSchema = (resource: JuadzResource) => {
   return {
-    description: `Update ${resource.resourceName} by ID`,
+    description: `Patch ${resource.resourceName} by ID`,
     tags: [resource.resourceName],
     params: {
       type: 'object',
