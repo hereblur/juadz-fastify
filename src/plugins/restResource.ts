@@ -1,15 +1,19 @@
 import {
   FastifyInstance,
-  FastifyReply,
-  FastifyRequest,
   preValidationAsyncHookHandler,
   RouteHandler,
   // RouteShorthandMethod,
   RouteShorthandOptions,
 } from 'fastify';
-import {ErrorToHttp, JuadzResource} from '@juadz/core';
-import {IACLActor, IDataRecord, IQueryAdaptor} from '@juadz/core';
-import {FastifyRequestWithAuth} from '../types';
+import {JuadzResource} from '@juadz/core';
+import {IQueryAdaptor} from '@juadz/core';
+import * as restGet from './rest/get';
+import * as restUpdate from './rest/update';
+import * as restCreate from './rest/create';
+import * as restReplace from './rest/replace';
+import * as restDelete from './rest/delete';
+import * as restList from './rest/list';
+import {getPreValidate} from './rest/common';
 
 export interface RestResourceDefinitionsOptions {
   prefix?: string;
@@ -21,43 +25,6 @@ export interface RestResourceDefinitions
   extends RestResourceDefinitionsOptions {
   resource: JuadzResource;
   path?: string;
-}
-
-interface SimpleObject extends Object {
-  [key: string]: unknown;
-}
-
-function handleError(error: unknown, reply: FastifyReply) {
-  const e = error as ErrorToHttp;
-
-  reply
-    .status(e.statusCode || 500)
-    .headers(e.headers || {})
-    .send(e.body || {message: 'Internal server error'});
-}
-
-function getActor(request: FastifyRequest): IACLActor {
-  return (request as FastifyRequestWithAuth).user as IACLActor;
-}
-
-function getId(request: FastifyRequest): string {
-  return (request.params as SimpleObject).id as string;
-}
-
-function getPreValidate(
-  fastify: FastifyInstance,
-  authentication: preValidationAsyncHookHandler | string | undefined
-): preValidationAsyncHookHandler | undefined {
-  if (typeof authentication === 'string') {
-    const exFastify = fastify as unknown;
-    return (exFastify as SimpleObject)[
-      authentication
-    ] as preValidationAsyncHookHandler;
-  }
-  if (!authentication) {
-    return undefined;
-  }
-  return authentication;
 }
 
 export default function useRestResource(
@@ -131,20 +98,9 @@ export default function useRestResource(
           makePath(resource.resourceName, true, definitions),
           {
             preValidation: getPreValidate(fastify, authentication),
-            schema: getSchema(resource),
+            schema: restGet.buildSchema(resource),
           },
-          async (request, reply) => {
-            try {
-              const result = await resource.get(
-                getActor(request),
-                getId(request)
-              );
-              reply.send(result);
-            } catch (error) {
-              fastify.log.error(error);
-              handleError(error, reply);
-            }
-          }
+          restGet.buildHandler(fastify, resource)
         );
       }
 
@@ -154,21 +110,9 @@ export default function useRestResource(
           makePath(resource.resourceName, true, resourceDef),
           {
             preValidation: getPreValidate(fastify, authentication),
-            schema: updateSchema(resource),
+            schema: restUpdate.buildSchema(resource),
           },
-          async (request, reply) => {
-            try {
-              const result = await resource.update(
-                getActor(request),
-                getId(request),
-                request.body as IDataRecord
-              );
-              reply.send(result);
-            } catch (error) {
-              fastify.log.error(error);
-              handleError(error, reply);
-            }
-          }
+          restUpdate.buildHandler(fastify, resource)
         );
       }
 
@@ -178,20 +122,9 @@ export default function useRestResource(
           makePath(resource.resourceName, false, resourceDef),
           {
             preValidation: getPreValidate(fastify, authentication),
-            schema: createSchema(resource),
+            schema: restCreate.buildSchema(resource),
           },
-          async (request, reply) => {
-            try {
-              const result = await resource.create(
-                getActor(request),
-                request.body as IDataRecord
-              );
-              reply.send(result);
-            } catch (error) {
-              fastify.log.error(error);
-              handleError(error, reply);
-            }
-          }
+          restCreate.buildHandler(fastify, resource)
         );
       }
 
@@ -201,21 +134,9 @@ export default function useRestResource(
           makePath(resource.resourceName, false, resourceDef),
           {
             preValidation: getPreValidate(fastify, authentication),
-            schema: replaceSchema(resource),
+            schema: restReplace.buildSchema(resource),
           },
-          async (request, reply) => {
-            try {
-              const result = await resource.replace(
-                getActor(request),
-                getId(request),
-                request.body as IDataRecord
-              );
-              reply.send(result);
-            } catch (error) {
-              fastify.log.error(error);
-              handleError(error, reply);
-            }
-          }
+          restReplace.buildHandler(fastify, resource)
         );
       }
 
@@ -225,20 +146,9 @@ export default function useRestResource(
           makePath(resource.resourceName, true, resourceDef),
           {
             preValidation: getPreValidate(fastify, authentication),
-            schema: deleteSchema(resource),
+            schema: restDelete.buildSchema(resource),
           },
-          async (request, reply) => {
-            try {
-              const result = await resource.delete(
-                getActor(request),
-                getId(request)
-              );
-              reply.send(result);
-            } catch (error) {
-              fastify.log.error(error);
-              handleError(error, reply);
-            }
-          }
+          restDelete.buildHandler(fastify, resource)
         );
       }
 
@@ -248,166 +158,11 @@ export default function useRestResource(
           makePath(resource.resourceName, false, resourceDef),
           {
             preValidation: getPreValidate(fastify, authentication),
-            schema: listSchema(resource, definitions.listAdaptor),
+            schema: restList.buildSchema(resource, definitions.listAdaptor),
           },
-          async (request, reply) => {
-            try {
-              if (!definitions.listAdaptor) {
-                throw new ErrorToHttp('ListAdaptor not defined');
-              }
-              const params = definitions.listAdaptor.parser(
-                resource.resourceName,
-                request.query as object
-              );
-              const result = await resource.list(getActor(request), params);
-              const response = definitions.listAdaptor.response(
-                result,
-                params,
-                resource.resourceName
-              );
-              const headers = response.headers as unknown;
-              reply.headers(headers as object).send(response.body);
-            } catch (error) {
-              fastify.log.error(error);
-              handleError(error, reply);
-            }
-          }
+          restList.buildHandler(fastify, resource, definitions.listAdaptor)
         );
       }
     });
   };
 }
-
-function listParamsSchema(params: Array<string>): SimpleObject {
-  const result: SimpleObject = {};
-  params.forEach(p => {
-    result[p] = {type: 'string'};
-  });
-  return result;
-}
-const listSchema = (resource: JuadzResource, listAdaptor: IQueryAdaptor) => {
-  return {
-    description: `List ${resource.resourceName}`,
-    tags: [resource.resourceName],
-    querystring: {
-      type: 'object',
-      properties: listParamsSchema(listAdaptor.params),
-    },
-    response: {
-      200: {
-        type: 'array',
-        item: {
-          type: 'object',
-          additionalProperties: false,
-          properties: resource.schema.viewSchema,
-        },
-      },
-    },
-  };
-};
-
-const getSchema = (resource: JuadzResource) => {
-  return {
-    description: `Get ${resource.resourceName} by ID`,
-    tags: [resource.resourceName],
-    params: {
-      type: 'object',
-      properties: {
-        id: {type: 'string'},
-      },
-      required: ['id'],
-    },
-    response: {
-      200: {
-        type: 'object',
-        additionalProperties: false,
-        properties: resource.schema.viewSchema,
-      },
-    },
-  };
-};
-
-const createSchema = (resource: JuadzResource) => {
-  return {
-    description: `Create ${resource.resourceName}`,
-    tags: [resource.resourceName],
-    body: {
-      type: 'object',
-      additionalProperties: false,
-      properties: resource.schema.createSchema,
-      required: resource.schema.requiredFields,
-    },
-    response: {
-      200: {
-        type: 'object',
-        additionalProperties: false,
-        properties: resource.schema.viewSchema,
-      },
-    },
-  };
-};
-
-const replaceSchema = (resource: JuadzResource) => {
-  return {
-    description: `Replace ${resource.resourceName}`,
-    tags: [resource.resourceName],
-    body: {
-      type: 'object',
-      additionalProperties: false,
-      properties: resource.schema.replaceSchema,
-      required: resource.schema.requiredFields,
-    },
-    response: {
-      200: {
-        type: 'object',
-        additionalProperties: false,
-        properties: resource.schema.viewSchema,
-      },
-    },
-  };
-};
-
-const updateSchema = (resource: JuadzResource) => {
-  return {
-    description: `Patch ${resource.resourceName} by ID`,
-    tags: [resource.resourceName],
-    params: {
-      type: 'object',
-      properties: {
-        id: {type: 'string'},
-      },
-      required: ['id'],
-    },
-    body: {
-      type: 'object',
-      additionalProperties: false,
-      properties: resource.schema.updateSchema,
-    },
-    response: {
-      200: {
-        type: 'object',
-        additionalProperties: false,
-        properties: resource.schema.viewSchema,
-      },
-    },
-  };
-};
-
-const deleteSchema = (resource: JuadzResource) => {
-  return {
-    description: `Get ${resource.resourceName} by ID`,
-    tags: [resource.resourceName],
-    params: {
-      type: 'object',
-      properties: {
-        id: {type: 'string'},
-      },
-      required: ['id'],
-    },
-    response: {
-      200: {
-        type: 'object',
-      },
-    },
-  };
-};
