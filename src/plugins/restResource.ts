@@ -44,11 +44,18 @@ export default function useRestResource(
       const def = getDefinitions(resourceDef);
       const name = def.resource.resourceName;
 
+      const paths = []
       if (def.path) {
-        return `${def.path.replace(/\/+$/, '')}/${routePath}`;
+        paths.push(`${def.path.replace(/\/+$/, '')}`);
+      } else {
+        paths.push(`${(def.prefix || '').replace(/\/+$/, '')}/${name}`);
       }
 
-      return `${(def.prefix || '').replace(/\/+$/, '')}/${name}/${routePath}`;
+      if (routePath && routePath.length) {
+        paths.push(routePath)
+      }
+
+      return paths.join('/')
     }
  
     const makeRoute = (
