@@ -1,6 +1,6 @@
 {
   "name": "@juadz/fastify",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "description": "Fastify plugins for Juadz",
   "main": "build/src/index.js",
   "scripts": {
