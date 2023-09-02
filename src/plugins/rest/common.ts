@@ -5,16 +5,7 @@ import {
   preValidationAsyncHookHandler,
 } from 'fastify';
 import {FastifyRequestWithAuth, SimpleObject} from '../../types';
-import {ErrorToHttp, IACLActor} from '@juadz/core';
-
-export function handleError(error: unknown, reply: FastifyReply) {
-  const e = error as ErrorToHttp;
-
-  reply
-    .status(e.statusCode || 500)
-    .headers(e.headers || {})
-    .send(e.body || {message: 'Internal server error'});
-}
+import {IACLActor} from '@juadz/core';
 
 export function getActor(request: FastifyRequest): IACLActor {
   return (request as FastifyRequestWithAuth).user as IACLActor;

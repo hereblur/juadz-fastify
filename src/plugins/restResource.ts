@@ -2,18 +2,13 @@ import {
   FastifyInstance,
   preValidationAsyncHookHandler,
   RouteHandler,
+  RouteHandlerMethod,
   // RouteShorthandMethod,
   RouteShorthandOptions,
 } from 'fastify';
-import {JuadzResource} from '@juadz/core';
-import {IQueryAdaptor} from '@juadz/core';
-import * as restGet from './rest/get';
-import * as restUpdate from './rest/update';
-import * as restCreate from './rest/create';
-import * as restReplace from './rest/replace';
-import * as restDelete from './rest/delete';
-import * as restList from './rest/list';
-import {getPreValidate} from './rest/common';
+
+import { JuadzResource, IQueryAdaptor, ResourceHandler, IResourceEndpoint, StringObject, ErrorToHttp } from '@juadz/core';
+import { getActor, getPreValidate } from './rest/common';
 
 export interface RestResourceDefinitionsOptions {
   prefix?: string;
@@ -42,21 +37,20 @@ export default function useRestResource(
       };
     };
 
-    const makePath = (
-      name: string,
-      withId: boolean,
-      resourceDef: RestResourceDefinitions
+    const makePath = (      
+      resourceDef: RestResourceDefinitions,
+      routePath: string,
     ) => {
       const def = getDefinitions(resourceDef);
+      const name = def.resource.resourceName;
+
       if (def.path) {
-        return `${def.path.replace(/\/+$/, '')}${withId ? '/:id' : ''}`;
+        return `${def.path.replace(/\/+$/, '')}/${routePath}`;
       }
 
-      return `${(def.prefix || '').replace(/\/+$/, '')}/${name}${
-        withId ? '/:id' : ''
-      }`;
-    };
-
+      return `${(def.prefix || '').replace(/\/+$/, '')}/${name}/${routePath}`;
+    }
+ 
     const makeRoute = (
       method: string,
       path: string,
@@ -90,79 +84,52 @@ export default function useRestResource(
     resources.forEach(resourceDef => {
       const definitions = getDefinitions(resourceDef);
       const {resource, authentication} = definitions;
-      const methodsMapping = resource.methodsMapping;
-
-      if (methodsMapping.view) {
+ 
+      resource.getEndpoints(definitions.listAdaptor).forEach((endpoint: IResourceEndpoint) => {
         makeRoute(
-          methodsMapping.view,
-          makePath(resource.resourceName, true, definitions),
+          endpoint.method,
+          makePath(definitions, endpoint.path),
           {
             preValidation: getPreValidate(fastify, authentication),
-            schema: restGet.buildSchema(resource),
+            schema: {
+              querystring: endpoint.querySchema,
+              params: endpoint.paramsSchema,
+              body: endpoint.bodySchema,
+              response: {
+                200: endpoint.responseSchema,
+              },
+            },
           },
-          restGet.buildHandler(fastify, resource)
+          fastifyHandlerAdaptor(fastify, endpoint.handler),
         );
-      }
+      });
 
-      if (methodsMapping.update) {
-        makeRoute(
-          methodsMapping.update,
-          makePath(resource.resourceName, true, resourceDef),
-          {
-            preValidation: getPreValidate(fastify, authentication),
-            schema: restUpdate.buildSchema(resource),
-          },
-          restUpdate.buildHandler(fastify, resource)
-        );
-      }
-
-      if (methodsMapping.create) {
-        makeRoute(
-          methodsMapping.create,
-          makePath(resource.resourceName, false, resourceDef),
-          {
-            preValidation: getPreValidate(fastify, authentication),
-            schema: restCreate.buildSchema(resource),
-          },
-          restCreate.buildHandler(fastify, resource)
-        );
-      }
-
-      if (methodsMapping.replace) {
-        makeRoute(
-          methodsMapping.replace,
-          makePath(resource.resourceName, false, resourceDef),
-          {
-            preValidation: getPreValidate(fastify, authentication),
-            schema: restReplace.buildSchema(resource),
-          },
-          restReplace.buildHandler(fastify, resource)
-        );
-      }
-
-      if (methodsMapping.delete) {
-        makeRoute(
-          methodsMapping.delete,
-          makePath(resource.resourceName, true, resourceDef),
-          {
-            preValidation: getPreValidate(fastify, authentication),
-            schema: restDelete.buildSchema(resource),
-          },
-          restDelete.buildHandler(fastify, resource)
-        );
-      }
-
-      if (methodsMapping.list && definitions.listAdaptor) {
-        makeRoute(
-          methodsMapping.list,
-          makePath(resource.resourceName, false, resourceDef),
-          {
-            preValidation: getPreValidate(fastify, authentication),
-            schema: restList.buildSchema(resource, definitions.listAdaptor),
-          },
-          restList.buildHandler(fastify, resource, definitions.listAdaptor)
-        );
-      }
     });
   };
+}
+
+
+function fastifyHandlerAdaptor(fastify: FastifyInstance, resourceHandler: ResourceHandler): RouteHandlerMethod {
+  return async (request, reply) => {
+    try{
+      const result = await resourceHandler({
+        method: request.method,
+        path: request.url,
+        query: request.query as StringObject,
+        params: request.params as StringObject,
+        body: request.body as object,
+        headers: request.headers as StringObject,
+        actor: getActor(request),
+      });
+      reply.headers(result.headers || {} ).send(result.body );
+    } catch(error) {
+      fastify.log.error(error);
+      const e = error as ErrorToHttp;
+
+      reply
+        .status(e.statusCode || 500)
+        .headers(e.headers || {})
+        .send(e.body || {message: 'Internal server error'});    
+    }
+  }
 }
