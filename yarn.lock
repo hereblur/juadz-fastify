@@ -1346,8 +1346,10 @@
     "@jridgewell/resolve-uri" "^3.1.0"
     "@jridgewell/sourcemap-codec" "^1.4.14"
 
-"@juadz/core@../juadz-core":
-  version "0.1.4"
+"@juadz/core@^0.2.1":
+  version "0.2.1"
+  resolved "https://registry.yarnpkg.com/@juadz/core/-/core-0.2.1.tgz#a9d319e32bdbfe785d580b72c093533c61149b4e"
+  integrity sha512-4I+99mvB98zTxDXWSa8Huc2V4Ui0bfOXpUmUIbnJtDaiu+IfFyMIgtyy/+/c9q8/VJh0RT+CdSoaRo2cne91iQ==
   dependencies:
     debug "^4.3.4"
 

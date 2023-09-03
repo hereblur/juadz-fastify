@@ -21,6 +21,11 @@ export function getPreValidate(
 ): preValidationAsyncHookHandler | undefined {
   if (typeof authentication === 'string') {
     const exFastify = fastify as unknown;
+
+    if (authentication === 'none') {
+        return undefined;
+    }
+
     return (exFastify as SimpleObject)[
       authentication
     ] as preValidationAsyncHookHandler;

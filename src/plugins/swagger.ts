@@ -7,6 +7,7 @@ export interface SwaggerConfig {
   description?: string;
   version?: string;
   endpoint?: string;
+  protocol?: string;
   documentPath?: string;
   tags?: Array<string>;
   securityDefinitions?: OpenAPIV2.SecurityDefinitionsObject;
@@ -20,11 +21,11 @@ export default function useSwagger(config: SwaggerConfig) {
         info: {
           title: config.title || 'Untitled document',
           description:
-            config.description || config.title || 'Untitled document',
+          config.description || config.title || 'Untitled document',
           version: config.version || '0.0.1',
         },
         host: config.endpoint || 'localhost',
-        schemes: ['http'],
+        schemes: [config.protocol || 'http'],
         consumes: ['application/json'],
         produces: ['application/json'],
         tags: [...(config.tags || []).map(name => ({name}))],

@@ -30,8 +30,9 @@ export default function useRestResource(
     const getDefinitions = (
       resourceDef: RestResourceDefinitions
     ): RestResourceDefinitions => {
+      const prefix = (resourceDef.prefix || defaultDefinitions.prefix || '').replace(/\/+$/, '');
       return {
-        prefix: '',
+        path: `${prefix}/${resourceDef.resource.resourceName}`,
         ...defaultDefinitions,
         ...resourceDef,
       };
@@ -39,23 +40,18 @@ export default function useRestResource(
 
     const makePath = (      
       resourceDef: RestResourceDefinitions,
-      routePath: string,
+      endpointPath: string,
     ) => {
       const def = getDefinitions(resourceDef);
-      const name = def.resource.resourceName;
 
-      const paths = []
-      if (def.path) {
-        paths.push(`${def.path.replace(/\/+$/, '')}`);
-      } else {
-        paths.push(`${(def.prefix || '').replace(/\/+$/, '')}/${name}`);
+      if (endpointPath && endpointPath.length) {
+        if (endpointPath.charAt(0) === '/') {
+          return endpointPath
+        }
+        return [def.path, endpointPath].join('/');
       }
 
-      if (routePath && routePath.length) {
-        paths.push(routePath)
-      }
-
-      return paths.join('/')
+      return `${def.path}`;
     }
  
     const makeRoute = (
@@ -93,11 +89,17 @@ export default function useRestResource(
       const {resource, authentication} = definitions;
  
       resource.getEndpoints(definitions.listAdaptor).forEach((endpoint: IResourceEndpoint) => {
+
+        let authentication_ = authentication;
+        if (endpoint.authentication) {
+          authentication_ = endpoint.authentication;
+        }
+
         makeRoute(
           endpoint.method,
           makePath(definitions, endpoint.path),
           {
-            preValidation: getPreValidate(fastify, authentication),
+            preValidation: getPreValidate(fastify, authentication_),
             schema: {
               querystring: endpoint.querySchema,
               params: endpoint.paramsSchema,
