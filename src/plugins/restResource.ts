@@ -101,6 +101,8 @@ export default function useRestResource(
           {
             preValidation: getPreValidate(fastify, authentication_),
             schema: {
+              tags: [resource.resourceName],
+              description: `${endpoint.method} ${resource.resourceName} [@juadz]`,
               querystring: endpoint.querySchema,
               params: endpoint.paramsSchema,
               body: endpoint.bodySchema,
