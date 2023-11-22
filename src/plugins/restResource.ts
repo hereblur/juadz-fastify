@@ -1,25 +1,45 @@
 import {
   FastifyInstance,
-  preValidationAsyncHookHandler,
   RouteHandler,
   RouteHandlerMethod,
-  // RouteShorthandMethod,
-  RouteShorthandOptions,
+  RouteShorthandOptions
 } from 'fastify';
 
-import { JuadzResource, IQueryAdaptor, ResourceHandler, IResourceEndpoint, StringObject, ErrorToHttp } from '@juadz/core';
+import { JuadzResource, IQueryAdaptor, ResourceHandler, IResourceEndpoint, StringObject, ErrorToHttp, JuadzSchema } from '@juadz/core';
 import { getActor, getPreValidate } from './rest/common';
+import { ExtendedPropertiesSchema } from '@juadz/core/build/src/schema/types';
 
 export interface RestResourceDefinitionsOptions {
   prefix?: string;
   listAdaptor?: IQueryAdaptor;
-  authentication?: preValidationAsyncHookHandler | string | undefined;
+  authentication?: string | undefined;
 }
 
 export interface RestResourceDefinitions
   extends RestResourceDefinitionsOptions {
   resource: JuadzResource;
   path?: string;
+}
+
+const makeParamSchemaFromPath = (path: string) => {
+  const pathParts = path.split('/');
+  const paramsSchema: ExtendedPropertiesSchema = {};
+  pathParts.forEach((p) => {
+    if (p.charAt(0) === ':') {
+      const paramName = p.substring(1);
+      paramsSchema[paramName] = {
+        type: 'string',
+      };
+    }
+  });
+
+  if (Object.keys(paramsSchema).length === 0) {
+    return undefined;
+  }
+
+  // console.log(paramsSchema, JuadzSchema.toJsonSchema(paramsSchema));
+
+  return JuadzSchema.toJsonSchema(paramsSchema);
 }
 
 export default function useRestResource(
@@ -60,6 +80,11 @@ export default function useRestResource(
       schema: RouteShorthandOptions,
       handler: RouteHandler
     ): void => {
+
+      // if (path === '/api/sso-v2/agents/:id') {
+      //   console.log('login', method, path, JSON.stringify(schema, null, 2))
+      // }
+
       switch (method.toLowerCase()) {
         case 'get':
           fastify.get(path, schema, handler);
@@ -90,25 +115,30 @@ export default function useRestResource(
  
       resource.getEndpoints(definitions.listAdaptor).forEach((endpoint: IResourceEndpoint) => {
 
-        let authentication_ = authentication;
-        if (endpoint.authentication) {
-          authentication_ = endpoint.authentication;
+        let authenticationName: string = endpoint.authentication || definitions.authentication || '';
+        if (authenticationName == 'none') {
+          authenticationName = '';
         }
 
         makeRoute(
           endpoint.method,
           makePath(definitions, endpoint.path),
           {
-            preValidation: getPreValidate(fastify, authentication_),
+            preValidation: getPreValidate(fastify, endpoint.authentication || authentication),
             schema: {
-              tags: [resource.resourceName],
-              description: `${endpoint.method} ${resource.resourceName} [@juadz]`,
-              querystring: endpoint.querySchema,
-              params: endpoint.paramsSchema,
-              body: endpoint.bodySchema,
+              tags: endpoint.tags,
+              summary: endpoint.description,
+              description: `permission: ${endpoint.action}.${resource.permissionName}`,
+              querystring: endpoint.querySchema ?  JuadzSchema.toJsonSchema(endpoint.querySchema) : undefined,
+              params: endpoint.paramsSchema ? JuadzSchema.toJsonSchema(endpoint.paramsSchema) : makeParamSchemaFromPath(endpoint.path),
+              body: endpoint.bodySchema ? endpoint.bodySchema : undefined,
+              security: authenticationName ? [{[authenticationName]: []}] : undefined,
               response: {
-                200: endpoint.responseSchema,
+                200: endpoint.responseSchema ? 
+                      JuadzSchema.toJsonSchema(endpoint.responseSchema) : 
+                      { "type": "object", "additionalProperties": true } 
               },
+
             },
           },
           fastifyHandlerAdaptor(fastify, endpoint.handler),
@@ -118,7 +148,6 @@ export default function useRestResource(
     });
   };
 }
-
 
 function fastifyHandlerAdaptor(fastify: FastifyInstance, resourceHandler: ResourceHandler): RouteHandlerMethod {
   return async (request, reply) => {
@@ -131,6 +160,7 @@ function fastifyHandlerAdaptor(fastify: FastifyInstance, resourceHandler: Resour
         body: request.body as object,
         headers: request.headers as StringObject,
         actor: getActor(request),
+        request: request,
       });
       reply.headers(result.headers || {} ).send(result.body );
     } catch(error) {

@@ -1,6 +1,7 @@
 import {FastifyInstance} from 'fastify';
 import FastifySwagger from '@fastify/swagger';
 import {OpenAPIV2} from 'openapi-types';
+import { SecurityDefinition } from '../types';
 
 export interface SwaggerConfig {
   title?: string;
@@ -10,11 +11,29 @@ export interface SwaggerConfig {
   protocol?: string;
   documentPath?: string;
   tags?: Array<string>;
-  securityDefinitions?: OpenAPIV2.SecurityDefinitionsObject;
+}
+
+interface FastifyEx extends FastifyInstance {
+  getSecurityDefinitions: () => Array<SecurityDefinition>
+}
+
+function makeSecurityDefinitions(fastify: FastifyEx): OpenAPIV2.SecurityDefinitionsObject {
+  const result: OpenAPIV2.SecurityDefinitionsObject = {};
+  const defs = fastify.getSecurityDefinitions();
+  if (defs && defs.length > 0) {
+    
+    defs.forEach(def => {
+      const { index, func, ...rest } = def;
+      result[index] = rest;
+    })
+  }
+
+  return result;
 }
 
 export default function useSwagger(config: SwaggerConfig) {
   return async (fastify: FastifyInstance) => {
+
     await fastify.register(FastifySwagger, {
       routePrefix: config.documentPath || '/documentations',
       swagger: {
@@ -30,13 +49,7 @@ export default function useSwagger(config: SwaggerConfig) {
         produces: ['application/json'],
         tags: [...(config.tags || []).map(name => ({name}))],
         definitions: {},
-        securityDefinitions: config.securityDefinitions || {
-          apiKey: {
-            type: 'apiKey',
-            name: 'Authorization',
-            in: 'header',
-          },
-        },
+        securityDefinitions: makeSecurityDefinitions(fastify as FastifyEx),
       },
       uiConfig: {
         // docExpansion: 'full',

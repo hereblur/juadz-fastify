@@ -1346,10 +1346,10 @@
     "@jridgewell/resolve-uri" "^3.1.0"
     "@jridgewell/sourcemap-codec" "^1.4.14"
 
-"@juadz/core@^0.2.1":
-  version "0.2.1"
-  resolved "https://registry.yarnpkg.com/@juadz/core/-/core-0.2.1.tgz#a9d319e32bdbfe785d580b72c093533c61149b4e"
-  integrity sha512-4I+99mvB98zTxDXWSa8Huc2V4Ui0bfOXpUmUIbnJtDaiu+IfFyMIgtyy/+/c9q8/VJh0RT+CdSoaRo2cne91iQ==
+"@juadz/core@^0.3.9":
+  version "0.3.9"
+  resolved "https://registry.yarnpkg.com/@juadz/core/-/core-0.3.9.tgz#df181b10990d923734e2034707543cee124baee7"
+  integrity sha512-eKoChFx1uhbh63oyg2bweMQIfptL0z+LMiCR3Xrdvc8nXDqi42QUnQmp2FyXkFGJqISKk2UV7vcMa3d++Dwlmw==
   dependencies:
     debug "^4.3.4"
 
